@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 import re
-import sqlite3
 from dataclasses import dataclass, field
 from typing import Any
 
-from .database import Database, QueryResult, UnsafeQueryError
+from .database import Database, QueryExecutionError, QueryResult, UnsafeQueryError
 from .llm import LLMClient
 from .prompts import (
     EXPLAIN_SYSTEM,
@@ -126,7 +125,9 @@ class SQLAgent:
             raise ValueError("A pergunta não pode estar vazia.")
 
         question = question.strip()
-        system_prompt = build_sql_system_prompt(self.database.schema())
+        system_prompt = build_sql_system_prompt(
+            self.database.schema(), dialect=self.database.dialect
+        )
 
         total_attempts = self.max_retries + 1
         previous_sql: str | None = None
@@ -140,7 +141,7 @@ class SQLAgent:
 
             try:
                 result = self.database.run(sql)
-            except (UnsafeQueryError, sqlite3.Error) as exc:
+            except (UnsafeQueryError, QueryExecutionError) as exc:
                 previous_sql = sql or raw_answer.strip()
                 previous_error = str(exc)
                 continue

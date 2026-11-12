@@ -1,4 +1,8 @@
-"""Geração do banco de exemplo usado nas demonstrações e nos testes."""
+"""Geração do banco de exemplo usado nas demonstrações e nos testes.
+
+Os mesmos dados podem ser gravados em SQLite (para o projeto rodar sem
+servidor) ou em MySQL (para o banco remoto do desafio).
+"""
 
 from __future__ import annotations
 
@@ -8,8 +12,9 @@ import sqlite3
 import unicodedata
 from datetime import date, timedelta
 from pathlib import Path
+from typing import Any
 
-SCHEMA = """
+SQLITE_SCHEMA = """
 PRAGMA foreign_keys = ON;
 
 CREATE TABLE clientes (
@@ -60,6 +65,68 @@ CREATE INDEX idx_pedidos_data ON pedidos(data_pedido);
 CREATE INDEX idx_itens_pedido ON itens_pedido(pedido_id);
 CREATE INDEX idx_itens_produto ON itens_pedido(produto_id);
 """
+
+MYSQL_SCHEMA_STATEMENTS = [
+    """
+    CREATE TABLE clientes (
+        id            INT AUTO_INCREMENT PRIMARY KEY,
+        nome          VARCHAR(120) NOT NULL,
+        email         VARCHAR(160) NOT NULL UNIQUE,
+        cidade        VARCHAR(80) NOT NULL,
+        estado        CHAR(2) NOT NULL,
+        segmento      VARCHAR(40) NOT NULL,
+        data_cadastro DATE NOT NULL,
+        KEY idx_clientes_cidade (cidade),
+        KEY idx_clientes_segmento (segmento)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    """,
+    """
+    CREATE TABLE vendedores (
+        id     INT AUTO_INCREMENT PRIMARY KEY,
+        nome   VARCHAR(120) NOT NULL,
+        email  VARCHAR(160) NOT NULL UNIQUE,
+        regiao VARCHAR(40) NOT NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    """,
+    """
+    CREATE TABLE produtos (
+        id             INT AUTO_INCREMENT PRIMARY KEY,
+        nome           VARCHAR(160) NOT NULL,
+        categoria      VARCHAR(40) NOT NULL,
+        preco_unitario DECIMAL(10, 2) NOT NULL,
+        estoque        INT NOT NULL DEFAULT 0,
+        KEY idx_produtos_categoria (categoria)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    """,
+    """
+    CREATE TABLE pedidos (
+        id          INT AUTO_INCREMENT PRIMARY KEY,
+        cliente_id  INT NOT NULL,
+        vendedor_id INT NOT NULL,
+        data_pedido DATE NOT NULL,
+        status      ENUM('pago', 'enviado', 'entregue', 'cancelado') NOT NULL,
+        canal       ENUM('site', 'loja', 'telefone') NOT NULL,
+        KEY idx_pedidos_cliente (cliente_id),
+        KEY idx_pedidos_vendedor (vendedor_id),
+        KEY idx_pedidos_data (data_pedido),
+        CONSTRAINT fk_pedidos_cliente FOREIGN KEY (cliente_id) REFERENCES clientes (id),
+        CONSTRAINT fk_pedidos_vendedor FOREIGN KEY (vendedor_id) REFERENCES vendedores (id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    """,
+    """
+    CREATE TABLE itens_pedido (
+        id             INT AUTO_INCREMENT PRIMARY KEY,
+        pedido_id      INT NOT NULL,
+        produto_id     INT NOT NULL,
+        quantidade     INT NOT NULL,
+        preco_unitario DECIMAL(10, 2) NOT NULL,
+        KEY idx_itens_pedido (pedido_id),
+        KEY idx_itens_produto (produto_id),
+        CONSTRAINT fk_itens_pedido FOREIGN KEY (pedido_id) REFERENCES pedidos (id),
+        CONSTRAINT fk_itens_produto FOREIGN KEY (produto_id) REFERENCES produtos (id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    """,
+]
 
 CIDADES = [
     ("São Paulo", "SP"),
@@ -142,21 +209,8 @@ def _iso(day: date) -> str:
     return day.isoformat()
 
 
-def create_sample_database(
-    path: str | Path,
-    *,
-    seed: int = 2026,
-    overwrite: bool = True,
-) -> Path:
-    """Cria (ou recria) um banco SQLite de demonstração e devolve o caminho."""
-
-    db_path = Path(path).expanduser().resolve()
-    db_path.parent.mkdir(parents=True, exist_ok=True)
-
-    if db_path.exists():
-        if not overwrite:
-            raise FileExistsError(f"O arquivo já existe: {db_path}")
-        db_path.unlink()
+def build_sample_data(seed: int = 2026) -> dict[str, list[tuple[Any, ...]]]:
+    """Gera os dados de demonstração de forma determinística."""
 
     rng = random.Random(seed)
 
@@ -217,32 +271,59 @@ def create_sample_database(
             )
             item_id += 1
 
+    return {
+        "clientes": clientes,
+        "vendedores": vendedores,
+        "produtos": produtos,
+        "pedidos": pedidos,
+        "itens_pedido": itens,
+    }
+
+
+def create_sample_database(
+    path: str | Path,
+    *,
+    seed: int = 2026,
+    overwrite: bool = True,
+) -> Path:
+    """Cria (ou recria) um banco SQLite de demonstração e devolve o caminho."""
+
+    db_path = Path(path).expanduser().resolve()
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if db_path.exists():
+        if not overwrite:
+            raise FileExistsError(f"O arquivo já existe: {db_path}")
+        db_path.unlink()
+
+    data = build_sample_data(seed)
+
     connection = sqlite3.connect(db_path)
     try:
-        connection.executescript(SCHEMA)
+        connection.executescript(SQLITE_SCHEMA)
         connection.executemany(
             "INSERT INTO clientes (id, nome, email, cidade, estado, segmento, data_cadastro) "
             "VALUES (?, ?, ?, ?, ?, ?, ?)",
-            clientes,
+            data["clientes"],
         )
         connection.executemany(
             "INSERT INTO vendedores (id, nome, email, regiao) VALUES (?, ?, ?, ?)",
-            vendedores,
+            data["vendedores"],
         )
         connection.executemany(
             "INSERT INTO produtos (id, nome, categoria, preco_unitario, estoque) "
             "VALUES (?, ?, ?, ?, ?)",
-            produtos,
+            data["produtos"],
         )
         connection.executemany(
             "INSERT INTO pedidos (id, cliente_id, vendedor_id, data_pedido, status, canal) "
             "VALUES (?, ?, ?, ?, ?, ?)",
-            pedidos,
+            data["pedidos"],
         )
         connection.executemany(
             "INSERT INTO itens_pedido (id, pedido_id, produto_id, quantidade, preco_unitario) "
             "VALUES (?, ?, ?, ?, ?)",
-            itens,
+            data["itens_pedido"],
         )
         connection.commit()
     finally:

@@ -9,7 +9,12 @@ from typing import Sequence
 
 from .agent import AgentResponse, SQLAgent, SQLAgentError
 from .config import Settings, load_settings
-from .database import Database
+from .database import (
+    Database,
+    DatabaseConfigurationError,
+    DatabaseConnectionError,
+    create_database,
+)
 from .llm import LLMConfigurationError, OpenAICompatibleLLM
 
 COMMANDS_HELP = """Comandos disponíveis:
@@ -88,11 +93,16 @@ def print_response(response: AgentResponse) -> None:
 
 def _open_database(settings: Settings) -> Database:
     try:
-        return Database(settings.db_path, max_rows=settings.max_rows)
+        return create_database(settings)
     except FileNotFoundError as exc:
         raise SystemExit(
             f"{exc}\n\nCrie o banco de exemplo com:\n"
             "  python scripts/create_sample_db.py"
+        ) from exc
+    except (DatabaseConnectionError, DatabaseConfigurationError) as exc:
+        raise SystemExit(
+            f"{exc}\n\nConfira as variáveis de banco no arquivo .env "
+            "(veja .env.example e o README)."
         ) from exc
 
 
@@ -130,8 +140,8 @@ def _run_question(agent: SQLAgent, question: str, *, explain: bool, as_json: boo
 
 def _repl(agent: SQLAgent, database: Database, *, explain: bool) -> int:
     print()
-    print("Agente SQL - perguntas em linguagem natural viram consultas SQLite")
-    print(f"Banco: {database.path}")
+    print("Agente SQL - perguntas em linguagem natural viram consultas SQL")
+    print(f"Banco: {database.label}")
     print("Digite /ajuda para ver os comandos ou /sair para encerrar.")
     print()
 
@@ -168,9 +178,11 @@ def _repl(agent: SQLAgent, database: Database, *, explain: bool) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="sql-agent",
-        description="Converte perguntas em linguagem natural para consultas SQL (SQLite).",
+        description="Converte perguntas em linguagem natural para consultas SQL (SQLite ou MySQL).",
     )
-    parser.add_argument("--db", help="caminho do arquivo SQLite (padrão: data/empresa.db)")
+    parser.add_argument(
+        "--db", help="caminho do arquivo SQLite (padrão: data/empresa.db)"
+    )
     parser.add_argument("-q", "--question", help="pergunta única; sem ela, abre o modo interativo")
     parser.add_argument("--json", action="store_true", help="imprime a resposta em JSON")
     parser.add_argument(
@@ -180,10 +192,15 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--max-rows", type=int, help="máximo de linhas retornadas (padrão: 100)")
     parser.add_argument("--max-retries", type=int, help="tentativas extras de correção (padrão: 2)")
+    parser.add_argument(
+        "--backend",
+        choices=["sqlite", "mysql"],
+        help="banco a usar (sobrescreve SQL_AGENT_BACKEND)",
+    )
     parser.add_argument("--model", help="sobrescreve LLM_MODEL")
     parser.add_argument("--base-url", help="sobrescreve LLM_BASE_URL")
     parser.add_argument("--show-schema", action="store_true", help="imprime o esquema e sai")
-    parser.add_argument("--version", action="version", version="%(prog)s 1.0.0")
+    parser.add_argument("--version", action="version", version="%(prog)s 1.1.0")
     return parser
 
 
@@ -191,6 +208,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
 
     settings = load_settings(
+        backend=args.backend,
         db_path=args.db,
         model=args.model,
         base_url=args.base_url,

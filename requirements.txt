@@ -1,2 +1,5 @@
 openai>=1.40.0,<3
 python-dotenv>=1.0.0,<2
+PyMySQL>=1.1.0,<3
+cryptography>=42.0
+streamlit>=1.50.0

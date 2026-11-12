@@ -3,11 +3,11 @@ from __future__ import annotations
 import pytest
 
 from sql_agent.agent import SQLAgent, SQLGenerationError, extract_sql
-from sql_agent.database import Database
+from sql_agent.database import SQLiteDatabase
 from tests.conftest import StubLLM
 
 
-def test_agente_responde_pergunta_com_sql_e_explicacao(database: Database) -> None:
+def test_agente_responde_pergunta_com_sql_e_explicacao(database: SQLiteDatabase) -> None:
     llm = StubLLM(
         "SELECT COUNT(*) AS total_clientes FROM clientes",
         "O banco tem 40 clientes cadastrados.",
@@ -24,7 +24,7 @@ def test_agente_responde_pergunta_com_sql_e_explicacao(database: Database) -> No
     assert "CREATE TABLE clientes" in llm.calls[0]["system"]
 
 
-def test_agente_corrige_sql_com_erro_de_execucao(database: Database) -> None:
+def test_agente_corrige_sql_com_erro_de_execucao(database: SQLiteDatabase) -> None:
     llm = StubLLM(
         "SELECT * FROM tabela_inexistente",
         "SELECT COUNT(*) AS total FROM clientes",
@@ -40,7 +40,7 @@ def test_agente_corrige_sql_com_erro_de_execucao(database: Database) -> None:
     assert "no such table" in llm.calls[1]["user"]
 
 
-def test_agente_tenta_novamente_quando_modelo_responde_texto(database: Database) -> None:
+def test_agente_tenta_novamente_quando_modelo_responde_texto(database: SQLiteDatabase) -> None:
     llm = StubLLM(
         "Não é possível responder com o esquema atual.",
         "SELECT COUNT(*) AS total FROM produtos",
@@ -54,7 +54,7 @@ def test_agente_tenta_novamente_quando_modelo_responde_texto(database: Database)
     assert response.result.rows == [(25,)]
 
 
-def test_agente_extrai_sql_de_cerca_markdown(database: Database) -> None:
+def test_agente_extrai_sql_de_cerca_markdown(database: SQLiteDatabase) -> None:
     llm = StubLLM(
         "Claro! Aqui está:\n```sql\nSELECT COUNT(*) AS total FROM pedidos;\n```\n",
         "Foram registrados 120 pedidos.",
@@ -67,7 +67,7 @@ def test_agente_extrai_sql_de_cerca_markdown(database: Database) -> None:
     assert response.result.rows == [(120,)]
 
 
-def test_agente_nunca_executa_consulta_destrutiva(database: Database) -> None:
+def test_agente_nunca_executa_consulta_destrutiva(database: SQLiteDatabase) -> None:
     llm = StubLLM("DROP TABLE clientes", "DELETE FROM clientes")
     agent = SQLAgent(database, llm, max_retries=1)
 
@@ -78,7 +78,7 @@ def test_agente_nunca_executa_consulta_destrutiva(database: Database) -> None:
     assert total.rows[0][0] == 40
 
 
-def test_agente_pode_pular_explicacao(database: Database) -> None:
+def test_agente_pode_pular_explicacao(database: SQLiteDatabase) -> None:
     llm = StubLLM("SELECT COUNT(*) AS total FROM clientes")
     agent = SQLAgent(database, llm)
 
@@ -88,7 +88,7 @@ def test_agente_pode_pular_explicacao(database: Database) -> None:
     assert len(llm.calls) == 1
 
 
-def test_falha_na_explicacao_nao_descarta_o_resultado(database: Database) -> None:
+def test_falha_na_explicacao_nao_descarta_o_resultado(database: SQLiteDatabase) -> None:
     llm = StubLLM(
         "SELECT COUNT(*) AS total FROM clientes",
         RuntimeError("limite de requisições atingido"),
@@ -102,7 +102,7 @@ def test_falha_na_explicacao_nao_descarta_o_resultado(database: Database) -> Non
     assert "limite de requisições" in response.warnings[0]
 
 
-def test_explicacao_recebe_aviso_de_truncamento(database: Database) -> None:
+def test_explicacao_recebe_aviso_de_truncamento(database: SQLiteDatabase) -> None:
     llm = StubLLM("SELECT nome FROM clientes ORDER BY nome", "Mostrando os primeiros clientes.")
     agent = SQLAgent(database, llm)
 

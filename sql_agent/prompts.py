@@ -9,8 +9,8 @@ from __future__ import annotations
 from datetime import date
 from typing import Sequence
 
-SQL_SYSTEM_TEMPLATE = """Você é um engenheiro de dados especialista em SQLite.
-Sua tarefa é converter a pergunta do usuário em UMA consulta SQLite correta.
+SQL_SYSTEM_TEMPLATE = """Você é um engenheiro de dados especialista em {dialect_name}.
+Sua tarefa é converter a pergunta do usuário em UMA consulta {dialect_name} correta.
 
 ## Regras obrigatórias
 1. Responda APENAS com a consulta SQL. Sem explicações, sem markdown, sem cercas de código.
@@ -19,20 +19,45 @@ Sua tarefa é converter a pergunta do usuário em UMA consulta SQLite correta.
 4. Escreva nomes de tabelas/colunas exatamente como no esquema.
 5. Use aliases curtos e legíveis; ao agregar, dê nomes claros às colunas (ex.: total_pedidos).
 6. Para "top N", "maiores", "mais recentes": use ORDER BY ... LIMIT N.
-7. Datas estão armazenadas como texto ISO (YYYY-MM-DD). Use date('now'), strftime('%Y', coluna)
-   e comparações com strings no formato 'YYYY-MM-DD'.
-8. Buscas textuais: prefira LIKE com LOWER() para ignorar maiúsculas/minúsculas.
-9. Valores monetários: arredonde resultados com ROUND(valor, 2) quando fizer sentido.
-10. Se a pergunta for ambígua, adote a interpretação mais natural e não peça esclarecimentos.
-11. Se a pergunta não puder ser respondida com o esquema, gere a consulta mais próxima possível.
-12. Não use ponto e vírgula no final.
+7. Buscas textuais: prefira LIKE com LOWER() para ignorar maiúsculas/minúsculas.
+8. Valores monetários: arredonde resultados com ROUND(valor, 2) quando fizer sentido.
+9. Se a pergunta for ambígua, adote a interpretação mais natural e não peça esclarecimentos.
+10. Se a pergunta não puder ser respondida com o esquema, gere a consulta mais próxima possível.
+11. Não use ponto e vírgula no final.
+
+## Regras específicas do dialeto
+{dialect_rules}
 
 ## Data de hoje
 {today}
 
-## Esquema do banco (SQLite)
+## Esquema do banco ({dialect_name})
 {schema}
 """
+
+DIALECTS = {
+    "sqlite": {
+        "name": "SQLite",
+        "rules": (
+            "- Datas estão armazenadas como texto ISO (YYYY-MM-DD). Use date('now'),\n"
+            "  strftime('%Y', coluna) e comparações com strings no formato 'YYYY-MM-DD'.\n"
+            "- Para extrair o mês: strftime('%m', coluna). Para o dia: strftime('%d', coluna).\n"
+            "- Identificadores podem ser escritos sem aspas; use aspas duplas só se necessário."
+        ),
+    },
+    "mysql": {
+        "name": "MySQL",
+        "rules": (
+            "- Datas usam o tipo DATE. Use CURDATE(), YEAR(coluna), MONTH(coluna)\n"
+            "  e DATE_FORMAT(coluna, '%Y-%m') para agrupar por mês.\n"
+            "- Para intervalos, prefira coluna >= '2026-01-01' AND coluna < '2027-01-01'\n"
+            "  (mais eficiente para o índice do que YEAR(coluna) = 2026).\n"
+            "- Identificadores podem ser escritos sem aspas; use crase (`nome`) apenas\n"
+            "  quando o nome tiver caracteres especiais.\n"
+            "- Não use funções exclusivas do SQLite, como strftime ou julianday."
+        ),
+    },
+}
 
 EXPLAIN_SYSTEM = """Você é um analista de dados que conversa com pessoas de negócio.
 Responda em português do Brasil, de forma direta e cordial, em no máximo 3 frases.
@@ -41,10 +66,15 @@ Se o resultado estiver vazio, diga que a consulta não retornou registros.
 Se os dados estiverem truncados, avise que a lista é parcial."""
 
 
-def build_sql_system_prompt(schema: str, today: date | None = None) -> str:
+def build_sql_system_prompt(
+    schema: str, today: date | None = None, dialect: str = "sqlite"
+) -> str:
+    spec = DIALECTS.get(dialect.strip().lower(), DIALECTS["sqlite"])
     return SQL_SYSTEM_TEMPLATE.format(
         schema=schema.strip(),
         today=(today or date.today()).isoformat(),
+        dialect_name=spec["name"],
+        dialect_rules=spec["rules"],
     )
 
 

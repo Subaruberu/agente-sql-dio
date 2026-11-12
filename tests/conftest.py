@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from sql_agent.database import Database  # noqa: E402
+from sql_agent.database import SQLiteDatabase  # noqa: E402
 from sql_agent.sample_data import create_sample_database  # noqa: E402
 
 
@@ -36,8 +36,8 @@ def db_path(tmp_path: Path) -> Path:
 
 
 @pytest.fixture()
-def database(db_path: Path) -> Database:
-    db = Database(db_path, max_rows=10)
+def database(db_path: Path) -> SQLiteDatabase:
+    db = SQLiteDatabase(db_path, max_rows=10)
     try:
         yield db
     finally:
