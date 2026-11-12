@@ -219,9 +219,13 @@ O agente não usa um provedor "oficial": qualquer serviço compatível com a API
 2. Clique em **Create API key** e copie a chave.
 3. Defina:
    ```env
-   LLM_MODEL=gemini-2.0-flash
+   LLM_MODEL=gemini-3.8-flash
    LLM_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
    ```
+
+   > O Google desliga modelos antigos com frequência (o `gemini-2.0-flash` já foi
+   > encerrado). Se aparecer erro de modelo inexistente, escolha outro Flash atual em
+   > <https://ai.google.dev/gemini-api/docs/models> e atualize `LLM_MODEL`.
 </details>
 
 <details>
@@ -321,7 +325,7 @@ Referências rápidas por provedor:
 | --- | --- | --- |
 | OpenAI | `gpt-4o-mini` | *(vazio)* |
 | Groq | `llama-3.3-70b-versatile` | `https://api.groq.com/openai/v1` |
-| Gemini | `gemini-2.0-flash` | `https://generativelanguage.googleapis.com/v1beta/openai/` |
+| Gemini | `gemini-3.8-flash` | `https://generativelanguage.googleapis.com/v1beta/openai/` |
 | OpenRouter | `meta-llama/llama-3.3-70b-instruct` | `https://openrouter.ai/api/v1` |
 | Ollama | `qwen2.5-coder:7b` | `http://localhost:11434/v1` |
 
