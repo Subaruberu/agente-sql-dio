@@ -266,7 +266,7 @@ O agente não usa um provedor "oficial": qualquer serviço compatível com a API
 
 ```powershell
 # 1. Clone o repositório e entre na pasta
-git clone https://github.com/SEU-USUARIO/agente-sql-dio.git
+git clone https://github.com/Subaruberu/agente-sql-dio.git
 cd agente-sql-dio
 
 # 2. Crie e ative um ambiente virtual (Windows/PowerShell)
