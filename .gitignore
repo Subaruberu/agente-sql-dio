@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+env/
+
+# Ambiente local
+.env
+
+# Banco gerado pelo script de exemplo
+data/*.db
+data/*.sqlite
+
+# Editores / sistema
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
