@@ -1,13 +1,3 @@
-"""Acesso somente leitura aos bancos suportados (SQLite e MySQL).
-
-A segurança é feita em camadas:
-
-1. Validação textual: apenas `SELECT`/`WITH ... SELECT` de uma única instrução.
-2. Conexão somente leitura (`mode=ro` no SQLite; sessão read-only no MySQL).
-3. Bloqueio de operações perigosas no próprio driver/banco.
-4. Limite de linhas retornadas, sem alterar a consulta original.
-"""
-
 from __future__ import annotations
 
 import re
