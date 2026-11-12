@@ -1,15 +1,3 @@
-"""Cria a massa de dados de demonstração em um banco MySQL.
-
-Uso:
-    python scripts/seed_mysql.py            # cria as tabelas (aborta se já existirem)
-    python scripts/seed_mysql.py --force    # apaga e recria as tabelas do projeto
-
-As credenciais vêm do .env / variáveis de ambiente:
-    SQL_AGENT_BACKEND=mysql
-    DATABASE_URL=mysql://usuario:senha@host:3306/diobank
-    # ou MYSQL_HOST, MYSQL_PORT, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DATABASE
-"""
-
 from __future__ import annotations
 
 import argparse
