@@ -1,9 +1,3 @@
-"""Cria o banco SQLite de exemplo em data/empresa.db.
-
-Uso:
-    python scripts/create_sample_db.py
-    python scripts/create_sample_db.py --output data/meu_banco.db
-"""
 
 from __future__ import annotations
 
@@ -12,7 +6,7 @@ import sqlite3
 import sys
 from pathlib import Path
 
-# Permite executar o script diretamente (sem instalar o pacote).
+# executar o script diretamente (sem instalar o pacote).
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from sql_agent.sample_data import create_sample_database  # noqa: E402
