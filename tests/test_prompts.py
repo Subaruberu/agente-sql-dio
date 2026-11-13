@@ -16,6 +16,7 @@ def test_prompt_de_sqlite_cita_recursos_do_sqlite() -> None:
     assert "2026-11-12" in prompt
     assert SCHEMA in prompt
     assert "CURDATE" not in prompt
+    assert "cancelado" in prompt
 
 
 def test_prompt_de_mysql_cita_recursos_do_mysql() -> None:

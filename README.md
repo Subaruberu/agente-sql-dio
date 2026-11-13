@@ -4,7 +4,7 @@
 [![SQLite](https://img.shields.io/badge/SQLite-3-003B57?logo=sqlite&logoColor=white)](https://www.sqlite.org/)
 [![MySQL](https://img.shields.io/badge/MySQL-8%2B-4479A1?logo=mysql&logoColor=white)](https://www.mysql.com/)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.50%2B-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io/)
-[![Testes](https://img.shields.io/badge/testes-62%20passando-2ea44f)](#testes)
+[![Testes](https://img.shields.io/badge/testes-63%20passando-2ea44f)](#testes)
 [![Licença](https://img.shields.io/badge/licen%C3%A7a-MIT-blue)](LICENSE)
 
 Agente que recebe perguntas em **linguagem natural**, gera **SQL** com um LLM, valida a consulta, executa em um banco **somente leitura** e devolve o resultado com uma explicação em português.
@@ -207,9 +207,12 @@ O agente não usa um provedor "oficial": qualquer serviço compatível com a API
 2. Em **API Keys**, crie uma chave (`gsk_...`).
 3. Defina:
    ```env
-   LLM_MODEL=llama-3.3-70b-versatile
+   LLM_MODEL=openai/gpt-oss-120b
    LLM_BASE_URL=https://api.groq.com/openai/v1
    ```
+
+   > O catálogo do Groq muda com frequência. Se o modelo não existir mais, liste os
+   > disponíveis em <https://console.groq.com/docs/models> e atualize `LLM_MODEL`.
 </details>
 
 <details>
@@ -226,6 +229,10 @@ O agente não usa um provedor "oficial": qualquer serviço compatível com a API
    > O Google desliga modelos antigos com frequência (o `gemini-2.0-flash` já foi
    > encerrado). Se aparecer erro de modelo inexistente, escolha outro Flash atual em
    > <https://ai.google.dev/gemini-api/docs/models> e atualize `LLM_MODEL`.
+   >
+   > Chaves novas do AI Studio podem vir no formato `AQ.` e serem recusadas pelo
+   > endpoint compatível com OpenAI (`401 ACCESS_TOKEN_TYPE_UNSUPPORTED`). Nesse caso,
+   > use Groq/OpenRouter ou uma chave `AIza...` com a Gemini API habilitada.
 </details>
 
 <details>
@@ -324,7 +331,7 @@ Referências rápidas por provedor:
 | Provedor | `LLM_MODEL` | `LLM_BASE_URL` |
 | --- | --- | --- |
 | OpenAI | `gpt-4o-mini` | *(vazio)* |
-| Groq | `llama-3.3-70b-versatile` | `https://api.groq.com/openai/v1` |
+| Groq | `openai/gpt-oss-120b` | `https://api.groq.com/openai/v1` |
 | Gemini | `gemini-3.8-flash` | `https://generativelanguage.googleapis.com/v1beta/openai/` |
 | OpenRouter | `meta-llama/llama-3.3-70b-instruct` | `https://openrouter.ai/api/v1` |
 | Ollama | `qwen2.5-coder:7b` | `http://localhost:11434/v1` |
@@ -638,7 +645,7 @@ python -m pytest -q
 ```
 
 ```text
-62 passed
+63 passed
 ```
 
 Os testes usam um **LLM falso** (*stub*), portanto rodam **sem rede e sem custo de API**. A cobertura inclui:
@@ -704,7 +711,7 @@ O processo completo está em [`docs/diario-de-bordo.md`](docs/diario-de-bordo.md
 - [x] **Streamlit agent** com histórico e exemplos
 - [x] README detalhado + diário de bordo
 - [x] Capturas de tela na pasta `images/`
-- [x] Testes automatizados (`62 passed`)
+- [x] Testes automatizados (`63 passed`)
 
 ## Próximos passos
 

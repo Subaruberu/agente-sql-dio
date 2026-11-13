@@ -172,7 +172,7 @@ Essa última decisão nasceu de um bug real: a primeira versão guardava a conex
 
 ## 5. Resultados
 
-- **62 testes automatizados** cobrindo validação, banco, agente, configuração, prompts e CLI.
+- **63 testes automatizados** cobrindo validação, banco, agente, configuração, prompts, cliente de LLM e CLI.
 - Dois backends funcionais: **SQLite** (padrão, zero configuração) e **MySQL** (local ou remoto).
 - Backend MySQL validado de ponta a ponta contra um servidor real: criação do banco, carga dos dados, introspecção, execução, bloqueio de escrita e Streamlit.
 - Banco de exemplo reproduzível: 40 clientes, 25 produtos, 120 pedidos e 289 itens — com os mesmos resultados nos dois bancos.
@@ -185,7 +185,7 @@ Essa última decisão nasceu de um bug real: a primeira versão guardava a conex
 1. **Engenharia de prompt é engenharia de contexto.** Regras curtas, específicas e com o esquema certo valem mais do que um prompt gigante e genérico.
 2. **Segurança não se delega ao modelo.** A parte determinística (validar, abrir somente leitura, limitar linhas) é o que permite dormir tranquilo.
 3. **Feedback melhora a resposta.** Devolver o erro do banco é mais eficaz do que pedir "tente novamente".
-4. **Normalizar a saída é essencial.** Grande parte das falhas era de formatação, não de raciocínio.
+4. **Normalizar a saída é essencial.** Grande parte das falhas era de formatação, não de raciocínio — inclusive espaços Unicode invisíveis devolvidos pelo modelo.
 5. **Testes com stub de LLM são rápidos e baratos.** O pipeline inteiro pode ser validado sem rede.
 6. **Dialeto não é detalhe.** `strftime` e `YEAR` parecem intercambiáveis até o banco recusar a consulta; o prompt precisa saber onde está rodando.
 7. **Threads mudam tudo em aplicações web.** Um objeto que funciona no terminal pode falhar dentro do Streamlit; conexões devem viver o mínimo possível.

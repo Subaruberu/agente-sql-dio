@@ -204,7 +204,23 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _configure_output() -> None:
+    """Evita UnicodeEncodeError em consoles Windows com codificação cp1252."""
+
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is None:
+            continue
+        try:
+            # Mantém a codificação do terminal, mas troca caracteres sem suporte
+            # (ex.: espaços finos devolvidos por LLMs) em vez de quebrar o programa.
+            reconfigure(errors="replace")
+        except (OSError, ValueError):  # pragma: no cover - terminal exótico
+            pass
+
+
 def main(argv: Sequence[str] | None = None) -> int:
+    _configure_output()
     args = build_parser().parse_args(argv)
 
     settings = load_settings(

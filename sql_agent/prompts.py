@@ -24,6 +24,8 @@ Sua tarefa é converter a pergunta do usuário em UMA consulta {dialect_name} co
 9. Se a pergunta for ambígua, adote a interpretação mais natural e não peça esclarecimentos.
 10. Se a pergunta não puder ser respondida com o esquema, gere a consulta mais próxima possível.
 11. Não use ponto e vírgula no final.
+12. Em cálculos de faturamento, gasto ou contagem de pedidos, desconsidere pedidos
+    com status 'cancelado' (condição `status <> 'cancelado'` na tabela de pedidos).
 
 ## Regras específicas do dialeto
 {dialect_rules}

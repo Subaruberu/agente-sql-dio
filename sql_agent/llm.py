@@ -4,6 +4,18 @@ from __future__ import annotations
 
 from typing import Protocol
 
+# Alguns modelos devolvem espaços Unicode "invisíveis" (fina, inseparável etc.).
+# Normalizá-los evita falhas de codificação em consoles Windows e textos estranhos.
+_SPACE_TRANSLATION = str.maketrans(
+    {
+        "\u00a0": " ",
+        "\u2009": " ",
+        "\u202f": " ",
+        "\u2007": " ",
+        "\u200b": "",
+    }
+)
+
 
 class LLMConfigurationError(RuntimeError):
     """Configuração ausente ou inválida para o provedor de LLM."""
@@ -56,4 +68,4 @@ class OpenAICompatibleLLM:
             ],
         )
         content = response.choices[0].message.content or ""
-        return content.strip()
+        return content.translate(_SPACE_TRANSLATION).strip()
